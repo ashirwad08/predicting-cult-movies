@@ -42,6 +42,13 @@ dat_eda=pd.concat([ dat_eda[['director','cast','genre','studios','distributor','
   dat_eda['prod_budget']=dat_eda.prod_budget.astype('float')
   
   
+  # step 10: read in a separate list of cult movies, merge on canonical names and label new
+  cultdf = pd.read_csv('/Users/ash/Downloads/cult movie list.csv', header=0)
+  cultdf = cultdf.set_index('title')
+  
+  
+  
+  
   #done with cleaning!!!!!!
   return dat_eda
   
@@ -76,6 +83,8 @@ def movie_eda(mov):
   mov.ix[mov.prod_budget==0,'prod_budget'] = np.nan
   
   mov['CULT_INDEX'] = (mov.rev_postOpening**2)/((mov.prod_budget**4) * (mov.rev_opening**2) * mov.num_theaters**2)
+  
+  
   
   
 
