@@ -7,12 +7,45 @@ def movie_clean_df(dat):
   #Step 1: subset data frame. 
   # let's only use the data points for which BOMOJO returned matches
   dat_eda = dat.loc[dat.rev_totalGross.notnull(),:]
+  # or just read in latest pickle!
+  with open(r"Movie_DF_latest_apr24_10pm.p", "rb") as input_file:
+    dat_eda = pickle.load(input_file)
+  
+  
+  
+  #Steps 1.x: Adjust revenue numbers for inflation!
+  ##ADJUST for inflation the following columns: rev_totalGross, adjusted by CPI; rev_opening adjusted by BOMOJO ticket sales;
+# prod_budget, adjusted by CPI; recalculate rev_postOpening!
+  
+  #read in BOMOJO ticket sales adjuster by year
+  bomojo_adj = pd.read_csv('./bomojo_ticket_price_adjuster.csv',header=0)
+  bomojo_adj.columns=bomojo_adj.columns.str.replace('\.\s','')
+  #bomojo_adj.Year = bomojo_adj.Year.astype('str')
+  bomojo_adj.AvgPrice = bomojo_adj.AvgPrice.str.replace('$','').astype('float')
+  #bomojo_adj.Year = bomojo_adj.Year.astype('int')
+  bomojo_adj.head()
+  
+  cpi = pd.read_csv("./cpi_by_year.csv", header=0)
+  cpi.columns=cpi.columns.str.replace('\.\s','')
+  cpi['CPI']=cpi.CPI.astype('float')
+  cpi['year']=cpi.year.astype('int')
+  
+  
+  mov['releaseYear'] = mov.releaseDate.apply(lambda val: val.year)
+  
+  mov['rev_opening_ADJ'] = (mov.rev_opening/mov.AvgPrice)*8.58
+  
+  mov['rev_totalGross'] = (mov.rev_totalGross/mov.AvgPrice)*8.58
+  
+  mov['prod_budget_ADJ'] = (mov.prod_budget/mov.CPI) * 238 #2016 CPI
+
+  
   
   #step 2: Create post_opening_rev feature
   #This is intended to be the revenue difference ebtween opening weekend and lifetime gross.
 
-  
-  dat_eda['rev_postOpening'] = dat_eda.apply(lambda row: row.rev_totalGross - row.rev_opening, axis=1)
+  #dat_eda['rev_postOpening'] = dat_eda.apply(lambda row: row.rev_totalGross - row.rev_opening, axis=1)
+  mov['rev_postOpening'] = mov.rev_totalGross_ADJ - mov.rev_opening_ADJ 
   
   # Step 3: Coerce date entries
   dat_eda.releaseDate=pd.to_datetime(dat_eda.releaseDate, errors='coerce')
@@ -43,9 +76,9 @@ dat_eda=pd.concat([ dat_eda[['director','cast','genre','studios','distributor','
   
   
   # step 10: read in a separate list of cult movies, merge on canonical names and label new
-  cultdf = pd.read_csv('/Users/ash/Downloads/cult movie list.csv', header=0)
-  cultdf = cultdf.set_index('title')
-  
+  cultlist = pd.read_csv('/Users/ash/Downloads/cult movie list.csv', header=0)
+  cultlist = cultdf.set_index('title')
+  mov = mov.merge(cultlist, how='left')
   
   
   
@@ -62,9 +95,45 @@ def movie_eda(mov):
   """Exploratory steps and manipulations on the movie dataset before training. Returns a final, 
   training and test datasets"""
   
+  #IMPUTE MISSING VALUES
+  ##rev_totalGross_ADJ has only 10 missing datapoints, whack years! delete
+  mov.rev_totalGross_ADJ.dropna(inplace=True) #IMPUTE (delete in this case, all gross revs missing)
   
-  # TO DO!!! ADJUST REVENUE NUMBERS OVER TIME!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-  # !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+  
+  
+  #Next, we'll look at rev_opening_ADJ
+#first, impute by mean revenue of distributor and genre for that year,
+  mov['rev_opening_ADJ'].fillna(mov.groupby(['year','distributor','genre_bomojo'])['rev_opening_ADJ'].transform('mean'), inplace=True)
+
+#only catches a few because of the year constraint, now impute based on distributor and genre
+  mov['rev_opening_ADJ'].fillna(mov.groupby(['distributor','genre_bomojo'])['rev_opening_ADJ'].transform('mean'), inplace=True)
+#fills about a 2/3rds of Nas, drop the rest...
+
+  mov['rev_opening_ADJ'].dropna(inplace=True)
+  
+  #Okay, next! prod_budget. There are 3610 missing values!!! Sensitive to imputing, but this could also be an important feature. Let's try the strategy we tried uptop.
+  mov.prod_budget_ADJ[mov.prod_budget_ADJ==0]=np.nan
+  mov.prod_budget_ADJ.fillna(mov.groupby(['year','distributor','genre_bomojo'])['prod_budget_ADJ'].transform('mean'), inplace=True)
+  mov.prod_budget_ADJ.fillna(mov.groupby(['distributor','genre_bomojo'])['prod_budget_ADJ'].transform('median'), inplace=True)
+  #these cut down nans to more than half. will drop the rest, too much noise at just the distributor level... fuck it ill try that
+  mov.prod_budget_ADJ.fillna(mov.groupby(['distributor'])['prod_budget_ADJ'].transform('median'), inplace=True)
+  # okay, down to 371 missing values. Imputed 90% of them! drop the rest
+  mov.prod_budget_ADJ.dropna(inplace=True)
+  
+  
+ 
+  
+  
+  
+  
+  # REMOVE OUTLIERS!!!!
+  #look at hist. kernel density: 
+  plt.figure(figsize=(20,10))
+  sns.distplot(mov.rev_opening_ADJ, rug=True)
+  
+  
+  
+  
   
   
   #MAIN HYPOTHESIS: The CULTINDEX is a somewhat significant gauge of a movie's cult status
@@ -86,6 +155,9 @@ def movie_eda(mov):
   
   
   
+  
+
+
   
 
 
