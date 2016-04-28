@@ -131,6 +131,8 @@ def movie_eda(mov):
   plt.figure(figsize=(20,10))
   sns.distplot(mov.rev_opening_ADJ, rug=True)
   
+  mov.sort_index(inplace=True)
+  
   
   
   
@@ -151,9 +153,29 @@ def movie_eda(mov):
   mov['rev_fraction'] = mov.rev_postOpening/mov.rev_opening
   mov.ix[mov.prod_budget==0,'prod_budget'] = np.nan
   
-  mov['CULT_INDEX'] = (mov.rev_postOpening**2)/((mov.prod_budget**4) * (mov.rev_opening**2) * mov.num_theaters**2)
+  mov['CULT_INDEX'] = np.exp(np.log(mov.rev_totalGross_ADJ)/(np.log(mov.rev_opening_ADJ**2)*(mov.num_theaters+1)))
+mov=mov.sort_values(by='CULT_INDEX',ascending=False)
+
+  #boxplot
+  plt.figure(figsize=(15, 7))
+sns.set_style('whitegrid')
+
+#movtemp = mov[mov.CULT_INDEX<2]
+
+sns.boxplot(x='isCult',y='CULT_INDEX',data=mov)
+plt.ylim(1,1.003)
+plt.title('Cult Index Variation in Movies Dataset\n(0=not cult, 1=is cult)')
+
+ #distplot
+ plt.figure(figsize=(15, 7))
+sns.set_style('whitegrid')
+
+sns.distplot(cult.CULT_INDEX,
+            rug=False, axlabel='Cult Index...', 
+            color='r')
   
   
+  # CATEGORICALS!!!!!!!!!!!!!!
   
   
 
