@@ -15,6 +15,6 @@ As you may guess, there is a lot of debate around what passes for a cult movie. 
 
 # Preliminary Cult Index Based Top Cult Movies  
 
-![Preliminary top cult movies shown by index]('./figures/cult_index_boxplots.png')
+![Preliminary top cult movies shown by index](./figures/cult_index_boxplots.png)
   
 
