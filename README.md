@@ -13,9 +13,8 @@ As you may guess, there is a lot of debate around what passes for a cult movie. 
 
 > **Inclusive** definitions allow for major studio productions, especially box office bombs, while **exclusive** definitions focus more on obscure, transgressive films shunned by the mainstream. The difficulty in defining the term and subjectivity of what qualifies as a cult film mirrorclassificatory disputes about art.
 
-# WIP: Preliminary Cult Index Based Top Cult Movies  
+# Preliminary Cult Index Based Top Cult Movies  
 
-![Preliminary top cult movies shown by index]('./figures/cultIndex_topMovies_v0.png')  
-# Model Building  
+![Preliminary top cult movies shown by index]('./figures/cult_index_boxplots.png')
+  
 
-wip...
